@@ -16,7 +16,17 @@ namespace SpaceInvaders
         public float Height { get; set; }
         public Vector2 Position { get; set; }
         public Color Color { get; set; }
+        public EnemyStatsu Statsu { get; set; } = EnemyStatsu.Pasive;
 
+        public void SetPositionX(float position)
+        {
+            this.Position = new Vector2(position, this.Position.Y);
+        }
+
+        public void SetPositionY(float position)
+        {
+            this.Position = new Vector2(this.Position.X, position);
+        }
         public void Draw()
         {
             // body
