@@ -29,13 +29,13 @@ namespace SpaceInvaders
         {
             Raylib.InitWindow(this.WidthWindow, this.HeightWindow, this.NameWindow);
             //Raylib.InitAudioDevice();
-            //string basePath = AppDomain.CurrentDomain.BaseDirectory;
+            string basePath = AppDomain.CurrentDomain.BaseDirectory;
 
-            //string fulPathIcon = Path.Combine(basePath, "Resources", "break-icon.png");
-            //Image icon = Raylib.LoadImage(fulPathIcon);
-            //Raylib.ImageFormat(ref icon, PixelFormat.UncompressedR8G8B8A8);
-            //Raylib.SetWindowIcon(icon);
-            //Raylib.UnloadImage(icon);
+            string fulPathIcon = Path.Combine(basePath, "Resources", "icon.png");
+            Image icon = Raylib.LoadImage(fulPathIcon);
+            Raylib.ImageFormat(ref icon, PixelFormat.UncompressedR8G8B8A8);
+            Raylib.SetWindowIcon(icon);
+            Raylib.UnloadImage(icon);
 
             //string hitBrickSoundPath = Path.Combine(basePath, "Resources", "hit-brick.mp3");
             //string hitPaddleSoundPath = Path.Combine(basePath, "Resources", "hit-paddle.mp3");
