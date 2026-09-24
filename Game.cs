@@ -69,8 +69,11 @@ namespace SpaceInvaders
                     {
                         shot.SetPositionY(shot.Position.Y - (shot.Speed * DeltaTime));
                     }
-                    this.UpdateShotsOutScreanOrImpact();
+                    this.CheckEnemyCollision();
                     this.MoveEnemys();
+                    this.UpdateShotsOutScreanOrImpact();
+                    this.CheckEndGame();
+                    this.CheckGameOver();
                     break;
                 case GameStatus.Paused:
                     break;
@@ -138,13 +141,13 @@ namespace SpaceInvaders
                     }
                     break;
                 case GameStatus.Paused:
-                    Raylib.DrawText("Presiona C para continuar", 10, 5, 20, Color.White);
+                    Raylib.DrawText("Presiona C para continuar", (WidthWindow / 2) - 120, HeightWindow/2, 24, Color.White);
                     break;
                 case GameStatus.GameOver:
-                    Raylib.DrawText("Fin del juego", 10, 5, 34, Color.White);
+                    Raylib.DrawText("Fin del juego", (WidthWindow/2) - 50, HeightWindow / 2, 34, Color.White);
                     break;
                 case GameStatus.End:
-                    Raylib.DrawText("Nivel completado", 10, 5, 34, Color.White);
+                    Raylib.DrawText("Nivel completado", (WidthWindow / 2) - 80, HeightWindow / 2, 34, Color.White);
                     break;
                 default:
                     break;
@@ -189,27 +192,65 @@ namespace SpaceInvaders
         public void MoveEnemys()
         {
             float move = 0;
-                if(isEnemyRight)
-                    move += 130 * DeltaTime;
-                else
-                    move -= 130 * DeltaTime;
-            foreach(var enemy in EnemyList)
+            if (isEnemyRight)
+                move += 100 * DeltaTime;
+            else
+                move -= 100 * DeltaTime;
+
+            EnemyList.ForEach(e =>
             {
-                float newX = enemy.Position.X + move;
-                newX = Math.Clamp(newX, 0, WidthWindow - enemy.Width);
-                enemy.SetPositionX(newX);
-                if (newX <= 0)
+                float newX = e.Position.X + move;
+                newX = Math.Clamp(newX, 0, WidthWindow - e.Width);
+                e.SetPositionX(newX);
+            });
+
+            if (EnemyList.Any(e => e.Position.X <= 0))
+            {
+                isEnemyRight = true;
+                EnemyList.ForEach(e => e.SetPositionY(e.Position.Y + 2));
+            }
+            if (EnemyList.Any(e => e.Position.X >= WidthWindow - e.Width))
+            {
+                isEnemyRight = false;
+                EnemyList.ForEach(e => e.SetPositionY(e.Position.Y + 2));
+            }
+        }
+
+        public void CheckEnemyCollision()
+        {
+            foreach (var enemy in EnemyList)
+            {
+                if (enemy.Status != EnemyStatus.Active)
+                    continue;
+
+                Rectangle enemyRec = new Rectangle(enemy.Position.X, enemy.Position.Y, enemy.Width, enemy.Height);
+                foreach (var shot in ShotList)
                 {
-                    isEnemyRight = true;
-                    //fix move y
-                    enemy.SetPositionY(enemy.Position.Y + 10);
-                }
-                if (newX >= WidthWindow - enemy.Width)
-                {
-                    isEnemyRight = false;
-                    enemy.SetPositionY(enemy.Position.Y + 10);
+                    if(shot.Status != ShotStatus.Active) 
+                        continue;
+
+                    Rectangle shotRec = new Rectangle(shot.Position.X, shot.Position.Y, shot.Width, shot.Height);
+                    if(Raylib.CheckCollisionRecs(enemyRec, shotRec))
+                    {
+                        shot.SetImpactStatus();
+                        enemy.SetDeadStatus();
+                        Score++;
+                    }
                 }
             }
+        }
+
+        public void CheckEndGame()
+        {
+            if (EnemyList.Count(e => e.Status == EnemyStatus.Active) <= 0)
+                GameStatus = GameStatus.End;
+        }
+
+        public void CheckGameOver()
+        {
+            if(EnemyList.Any(e => e.Status == EnemyStatus.Active 
+            && (e.Position.Y + e.Height) >= Player.Position.Y - 50))
+                GameStatus = GameStatus.GameOver;
         }
     }
 }

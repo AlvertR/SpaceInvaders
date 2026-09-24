@@ -16,7 +16,7 @@ namespace SpaceInvaders
         public float Height { get; set; }
         public Vector2 Position { get; set; }
         public Color Color { get; set; }
-        public EnemyStatsu Statsu { get; set; } = EnemyStatsu.Pasive;
+        public EnemyStatus Status { get; set; } = EnemyStatus.Active;
 
         public void SetPositionX(float position)
         {
@@ -29,11 +29,17 @@ namespace SpaceInvaders
         }
         public void Draw()
         {
-            // body
-            Raylib.DrawRectangleV(Position, new Vector2(Width, Height), Color);
-            // eyes
-            Raylib.DrawRectangleV(new Vector2(Position.X + 8,Position.Y + 8), new Vector2(6, 6), Color.Black);
-            Raylib.DrawRectangleV(new Vector2(Position.X + Width - 14, Position.Y + 8), new Vector2(6, 6), Color.Black);
+            if (Status == EnemyStatus.Active)
+            {
+                // body
+                Raylib.DrawRectangleV(Position, new Vector2(Width, Height), Color);
+                // eyes
+                Raylib.DrawRectangleV(new Vector2(Position.X + 8, Position.Y + 8), new Vector2(6, 6), Color.Black);
+                Raylib.DrawRectangleV(new Vector2(Position.X + Width - 14, Position.Y + 8), new Vector2(6, 6), Color.Black);
+            }
         }
+
+        public void SetDeadStatus()
+            => Status = EnemyStatus.Dead;
     }
 }

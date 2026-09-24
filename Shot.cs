@@ -31,7 +31,8 @@ namespace SpaceInvaders
 
         public void Draw()
         {
-            Raylib.DrawRectangleV(Position, new Vector2(Width, Height), Color);
+            if(Status == ShotStatus.Active)
+                Raylib.DrawRectangleV(Position, new Vector2(Width, Height), Color);
         }
 
         public void SetImpactStatus()

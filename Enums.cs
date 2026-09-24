@@ -15,11 +15,9 @@
         Impact,
     }
 
-    public enum EnemyStatsu
+    public enum EnemyStatus
     {
-        Pasive,
         Active,
         Dead,
-        Out,
     }
 }
