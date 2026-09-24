@@ -20,4 +20,11 @@
         Active,
         Dead,
     }
+
+    public enum EnemyType
+    {
+        Bug,
+        Skull,
+        Fish,
+    }
 }
