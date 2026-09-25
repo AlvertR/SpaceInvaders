@@ -1,5 +1,4 @@
 ﻿using Raylib_cs;
-using System.Numerics;
 
 namespace SpaceInvaders
 {
@@ -24,6 +23,7 @@ namespace SpaceInvaders
         public Sound CrashEnemy { get; set; }
         public List<Enemy> EnemyList { get; set; } = new List<Enemy>();
         public bool isEnemyRight { get; set; } = false;
+        public float TimerEnd { get; set; } = 0.8f;
 
         public void LoadGame()
         {
@@ -120,16 +120,15 @@ namespace SpaceInvaders
         public void Draw()
         {
             Raylib.BeginDrawing();
-            //Raylib.ClearBackground(Color.Black);
+            Raylib.ClearBackground(Color.Black);
             switch (GameStatus)
             {
                 case GameStatus.Start:
-                    Raylib.ClearBackground(Color.Black);
                     Raylib.DrawText(NameWindow, 10, 5, 24, Color.White);
                     Raylib.DrawText("Presiona S para iniciar", 10, 30, 20, Color.White);
                     break;
+                case GameStatus.Paused:
                 case GameStatus.Playing:
-                    Raylib.ClearBackground(Color.Black);
                     Raylib.DrawText("Puntos: " + Score.ToString(), 10, 5, 14, Color.White);
                     Player.Draw();
                     foreach(var shot in ShotList)
@@ -141,9 +140,8 @@ namespace SpaceInvaders
                     {
                         enemy.Draw();
                     }
-                    break;
-                case GameStatus.Paused:
-                    Raylib.DrawText("Presiona C para continuar", (WidthWindow / 2) - 120, HeightWindow/2, 24, Color.White);
+                    if(GameStatus == GameStatus.Paused)
+                        Raylib.DrawText("Presiona C para continuar", (WidthWindow / 2) - 120, HeightWindow/2, 24, Color.White);
                     break;
                 case GameStatus.GameOver:
                     Raylib.DrawText("Fin del juego", (WidthWindow/2) - 50, HeightWindow / 2, 34, Color.White);
@@ -200,8 +198,6 @@ namespace SpaceInvaders
             else
                 move -= 100 * DeltaTime;
 
-            //EnemyList = EnemyList.Where(e => e.Status != EnemyStatus.Dead).ToList();
-
             EnemyList.Where(e=> e.Status != EnemyStatus.Dead).ToList().ForEach(e => 
             {
                 float newX = e.Position.X + move;
@@ -212,12 +208,14 @@ namespace SpaceInvaders
             if (EnemyList.Any(e => e.Position.X <= 0 && e.Status != EnemyStatus.Dead))
             {
                 isEnemyRight = true;
-                EnemyList.ForEach(e => e.SetPositionY(e.Position.Y + 2));
+                EnemyList.Where(e => e.Status != EnemyStatus.Dead).ToList()
+                    .ForEach(e => e.SetPositionY(e.Position.Y + 2));
             }
             if (EnemyList.Any(e => e.Position.X >= WidthWindow - e.Width && e.Status != EnemyStatus.Dead))
             {
                 isEnemyRight = false;
-                EnemyList.ForEach(e => e.SetPositionY(e.Position.Y + 2));
+                EnemyList.Where(e => e.Status != EnemyStatus.Dead).ToList()
+                    .ForEach(e => e.SetPositionY(e.Position.Y + 2));
             }
         }
 
@@ -240,7 +238,6 @@ namespace SpaceInvaders
                         shot.SetImpactStatus();
                         enemy.SetDeadStatus();
                         Raylib.PlaySound(CrashEnemy);
-                        //this.DrawExplosion(enemy);
                         enemy.ShowCollision = true;
                         Score++;
                     }
@@ -248,45 +245,14 @@ namespace SpaceInvaders
             }
         }
 
-        public void DrawExplosion(Enemy enemy)
-        {
-            float baseX = enemy.Position.X;
-            float baseY = enemy.Position.Y;
-            float widthBasePixel = enemy.Width / 7;
-            float heightBasePixel = enemy.Height / 5;
-
-            Raylib.DrawRectangleV(new Vector2(baseX + (widthBasePixel * 2), baseY), new Vector2(widthBasePixel, heightBasePixel), Color.Lime);
-            Raylib.DrawRectangleV(new Vector2(baseX + widthBasePixel, baseY - heightBasePixel), new Vector2(widthBasePixel, heightBasePixel), Color.Lime);
-            Raylib.DrawRectangleV(new Vector2(baseX + (widthBasePixel * 4), baseY), new Vector2(widthBasePixel, heightBasePixel), Color.Lime);
-            Raylib.DrawRectangleV(new Vector2(baseX + (widthBasePixel * 5), baseY - heightBasePixel), new Vector2(widthBasePixel, heightBasePixel), Color.Lime);
-
-            Raylib.DrawRectangleV(new Vector2(baseX, baseY + (heightBasePixel * 2)), new Vector2(widthBasePixel, heightBasePixel), Color.Lime);
-            Raylib.DrawRectangleV(new Vector2(baseX - widthBasePixel, baseY + heightBasePixel), new Vector2(widthBasePixel, heightBasePixel), Color.Lime);
-            Raylib.DrawRectangleV(new Vector2(baseX - (widthBasePixel * 2), baseY), new Vector2(widthBasePixel, heightBasePixel), Color.Lime);
-            Raylib.DrawRectangleV(new Vector2(baseX + (widthBasePixel * 6), baseY + (heightBasePixel * 2)), new Vector2(widthBasePixel, heightBasePixel), Color.Lime);
-            Raylib.DrawRectangleV(new Vector2(baseX + (widthBasePixel * 7), baseY + heightBasePixel), new Vector2(widthBasePixel, heightBasePixel), Color.Lime);
-            Raylib.DrawRectangleV(new Vector2(baseX + (widthBasePixel * 8), baseY), new Vector2(widthBasePixel, heightBasePixel), Color.Lime);
-
-            Raylib.DrawRectangleV(new Vector2(baseX - (widthBasePixel * 3), baseY + (heightBasePixel * 3)), new Vector2(widthBasePixel * 2, heightBasePixel), Color.Lime);
-            Raylib.DrawRectangleV(new Vector2(baseX + (widthBasePixel * 8), baseY + (heightBasePixel * 3)), new Vector2(widthBasePixel * 2, heightBasePixel), Color.Lime);
-
-            Raylib.DrawRectangleV(new Vector2(baseX, baseY + (heightBasePixel * 4)), new Vector2(widthBasePixel, heightBasePixel), Color.Lime);
-            Raylib.DrawRectangleV(new Vector2(baseX - widthBasePixel, baseY + (heightBasePixel * 5)), new Vector2(widthBasePixel, heightBasePixel), Color.Lime);
-            Raylib.DrawRectangleV(new Vector2(baseX - (widthBasePixel * 2), baseY + (heightBasePixel * 6)), new Vector2(widthBasePixel, heightBasePixel), Color.Lime);
-            Raylib.DrawRectangleV(new Vector2(baseX + (widthBasePixel * 6), baseY + (heightBasePixel * 4)), new Vector2(widthBasePixel, heightBasePixel), Color.Lime);
-            Raylib.DrawRectangleV(new Vector2(baseX + (widthBasePixel * 7), baseY + (heightBasePixel * 5)), new Vector2(widthBasePixel, heightBasePixel), Color.Lime);
-            Raylib.DrawRectangleV(new Vector2(baseX + (widthBasePixel * 8), baseY + (heightBasePixel * 6)), new Vector2(widthBasePixel, heightBasePixel), Color.Lime);
-
-            Raylib.DrawRectangleV(new Vector2(baseX + (widthBasePixel * 2), baseY + (heightBasePixel * 5)), new Vector2(widthBasePixel, heightBasePixel), Color.Lime);
-            Raylib.DrawRectangleV(new Vector2(baseX + widthBasePixel, baseY + (heightBasePixel * 6)), new Vector2(widthBasePixel, heightBasePixel), Color.Lime);
-            Raylib.DrawRectangleV(new Vector2(baseX + (widthBasePixel * 4), baseY + (heightBasePixel * 5)), new Vector2(widthBasePixel, heightBasePixel), Color.Lime);
-            Raylib.DrawRectangleV(new Vector2(baseX + (widthBasePixel * 5), baseY + (heightBasePixel * 6)), new Vector2(widthBasePixel, heightBasePixel), Color.Lime);
-        }
-
         public void CheckEndGame()
         {
             if (EnemyList.Count(e => e.Status == EnemyStatus.Active) <= 0)
-                GameStatus = GameStatus.End;
+            {
+                this.TimerEnd -= DeltaTime;
+                if (TimerEnd <= 0)
+                    GameStatus = GameStatus.End;
+            }
         }
 
         public void CheckGameOver()
