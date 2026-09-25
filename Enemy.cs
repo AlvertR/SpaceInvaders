@@ -107,10 +107,14 @@ namespace SpaceInvaders
             }
             if (ShowCollision) {
                 this.DrawSprite(ExplosionSprite, Color.Lime);
-                this.Timer -= Raylib.GetFrameTime();
-                if(Timer <= 0)
-                    ShowCollision = false;
             }
+        }
+
+        public void UpdateTimer()
+        {
+            this.Timer -= Raylib.GetFrameTime();
+            if (Timer <= 0)
+                ShowCollision = false;
         }
 
         private void DrawSprite(string[] sprite, Color mainColor)

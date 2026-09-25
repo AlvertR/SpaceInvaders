@@ -76,6 +76,8 @@ namespace SpaceInvaders
                     this.UpdateShotsOutScreanOrImpact();
                     this.CheckEndGame();
                     this.CheckGameOver();
+                    EnemyList.Where(e => e.Status == EnemyStatus.Dead && e.ShowCollision==true).ToList()
+                        .ForEach(e => e.UpdateTimer());
                     break;
                 case GameStatus.Paused:
                     break;
@@ -111,6 +113,8 @@ namespace SpaceInvaders
                     break;
                 case GameStatus.GameOver:
                 case GameStatus.End:
+                    if (Raylib.IsKeyPressed(KeyboardKey.R))
+                        this.ResetGame();
                     break;
                 default:
                     break;
@@ -124,12 +128,12 @@ namespace SpaceInvaders
             switch (GameStatus)
             {
                 case GameStatus.Start:
-                    Raylib.DrawText(NameWindow, 10, 5, 24, Color.White);
-                    Raylib.DrawText("Presiona S para iniciar", 10, 30, 20, Color.White);
+                    Raylib.DrawText(Texts.Title, GetMidelScreanText(Texts.Title, 24), 5, 24, Color.White);
+                    Raylib.DrawText(Texts.StartInstruction, GetMidelScreanText(Texts.StartInstruction, 20), 30, 20, Color.White);
                     break;
                 case GameStatus.Paused:
                 case GameStatus.Playing:
-                    Raylib.DrawText("Puntos: " + Score.ToString(), 10, 5, 14, Color.White);
+                    Raylib.DrawText(Texts.PointsTitle+": " + Score.ToString(), 10, 5, 14, Color.White);
                     Player.Draw();
                     foreach(var shot in ShotList)
                     {
@@ -141,18 +145,28 @@ namespace SpaceInvaders
                         enemy.Draw();
                     }
                     if(GameStatus == GameStatus.Paused)
-                        Raylib.DrawText("Presiona C para continuar", (WidthWindow / 2) - 120, HeightWindow/2, 24, Color.White);
+                        Raylib.DrawText(Texts.PauseInstruction, GetMidelScreanText(Texts.PauseInstruction, 24), HeightWindow/2, 24, Color.White);
                     break;
                 case GameStatus.GameOver:
-                    Raylib.DrawText("Fin del juego", (WidthWindow/2) - 50, HeightWindow / 2, 34, Color.White);
+                    Raylib.DrawText(Texts.GameOverTitle, GetMidelScreanText(Texts.GameOverTitle, 34), HeightWindow / 2, 34, Color.White);
+                    Raylib.DrawText(Texts.ResetInstruction, GetMidelScreanText(Texts.ResetInstruction, 30), (HeightWindow / 2) + 30, 30, Color.White);
                     break;
                 case GameStatus.End:
-                    Raylib.DrawText("Nivel completado", (WidthWindow / 2) - 80, HeightWindow / 2, 34, Color.White);
+                    Raylib.DrawText(Texts.EndTitle, GetMidelScreanText(Texts.EndTitle, 34), HeightWindow / 2, 34, Color.White);
+                    Raylib.DrawText(Texts.ResetInstruction, GetMidelScreanText(Texts.ResetInstruction, 30), (HeightWindow / 2) + 30, 30, Color.White);
                     break;
                 default:
                     break;
             }
             Raylib.EndDrawing();
+        }
+
+        public int GetMidelScreanText(string text, int fontSize)
+        {
+            int position = 0;
+            int textWidth = Raylib.MeasureText(text, fontSize);
+            position = (WidthWindow / 2) - (textWidth / 2);
+            return position;
         }
 
         public void AddShot()
@@ -192,31 +206,31 @@ namespace SpaceInvaders
 
         public void MoveEnemys()
         {
-            float move = 0;
-            if (isEnemyRight)
-                move += 100 * DeltaTime;
-            else
-                move -= 100 * DeltaTime;
+            var aliveEnemies = EnemyList.Where(e => e.Status != EnemyStatus.Dead).ToList();
+            if (aliveEnemies.Count == 0)
+                return;
 
-            EnemyList.Where(e=> e.Status != EnemyStatus.Dead).ToList().ForEach(e => 
-            {
-                float newX = e.Position.X + move;
-                newX = Math.Clamp(newX, 0, WidthWindow - e.Width);
-                e.SetPositionX(newX);
-            });
+            float move = (isEnemyRight ? 100 : -100) * DeltaTime;
 
-            if (EnemyList.Any(e => e.Position.X <= 0 && e.Status != EnemyStatus.Dead))
+            // Limites de la formacion completa, no de cada enemigo
+            float minX = aliveEnemies.Min(e => e.Position.X);
+            float maxX = aliveEnemies.Max(e => e.Position.X + e.Width);
+            move = Math.Clamp(move, -minX, WidthWindow - maxX);
+
+            bool hitLeft = minX + move <= 0;
+            bool hitRight = maxX + move >= WidthWindow;
+
+            foreach (var e in aliveEnemies)
             {
+                e.SetPositionX(e.Position.X + move);
+                if (hitLeft || hitRight)
+                    e.SetPositionY(e.Position.Y + 2);
+            }
+
+            if (hitLeft)
                 isEnemyRight = true;
-                EnemyList.Where(e => e.Status != EnemyStatus.Dead).ToList()
-                    .ForEach(e => e.SetPositionY(e.Position.Y + 2));
-            }
-            if (EnemyList.Any(e => e.Position.X >= WidthWindow - e.Width && e.Status != EnemyStatus.Dead))
-            {
+            else if (hitRight)
                 isEnemyRight = false;
-                EnemyList.Where(e => e.Status != EnemyStatus.Dead).ToList()
-                    .ForEach(e => e.SetPositionY(e.Position.Y + 2));
-            }
         }
 
         public void CheckEnemyCollision()
@@ -240,6 +254,7 @@ namespace SpaceInvaders
                         Raylib.PlaySound(CrashEnemy);
                         enemy.ShowCollision = true;
                         Score++;
+                        break;
                     }
                 }
             }
@@ -260,6 +275,18 @@ namespace SpaceInvaders
             if(EnemyList.Any(e => e.Status == EnemyStatus.Active 
             && (e.Position.Y + e.Height) >= Player.Position.Y - 50))
                 GameStatus = GameStatus.GameOver;
+        }
+
+        public void ResetGame()
+        {
+            TimerEnd = 0.8f;
+            GameStatus = GameStatus.Playing;
+            Score = 0;
+            Player.SetPositionX((WidthWindow / 2) - 25);
+            ShotList = new List<Shot>();
+            EnemyList = new List<Enemy>();
+            isEnemyRight = false;
+            this.SetEnemiList();
         }
     }
 }
