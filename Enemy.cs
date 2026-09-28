@@ -3,7 +3,7 @@ using System.Numerics;
 
 namespace SpaceInvaders
 {
-    public class Enemy
+    public class Enemy : Entity
     {
         #region Sprites
         // '#' = color del enemigo, 'o' = negro, '.' = vacío
@@ -59,30 +59,17 @@ namespace SpaceInvaders
         #endregion
 
         public Enemy(float width, float height, float posX, float posY, Color color, EnemyType type) {
-            Width = width; 
-            Height = height;
-            Position = new Vector2(posX, posY);
+            Bounds = new Rectangle(posX, posY, width, height);
             Color = color;
             TypeEnemy = type;
         }
-        public float Width { get; set; }
-        public float Height { get; set; }
-        public Vector2 Position { get; set; }
+
         public Color Color { get; set; }
         public EnemyStatus Status { get; set; } = EnemyStatus.Active;
         public EnemyType TypeEnemy { get; set; }
         public bool ShowCollision { get; set; } = false;
         public float Timer { get; set; } = 0.5f;
 
-        public void SetPositionX(float position)
-        {
-            this.Position = new Vector2(position, this.Position.Y);
-        }
-
-        public void SetPositionY(float position)
-        {
-            this.Position = new Vector2(this.Position.X, position);
-        }
         public void Draw()
         {
             if (Status == EnemyStatus.Active)
@@ -99,9 +86,9 @@ namespace SpaceInvaders
                         this.DrawSprite(FishSprite, Color);
                         break;
                     default:
-                        Raylib.DrawRectangleV(Position, new Vector2(Width, Height), Color);
-                        Raylib.DrawRectangleV(new Vector2(Position.X + 8, Position.Y + 8), new Vector2(6, 6), Color.Black);
-                        Raylib.DrawRectangleV(new Vector2(Position.X + Width - 14, Position.Y + 8), new Vector2(6, 6), Color.Black);
+                        Raylib.DrawRectangleV(new Vector2(Bounds.X, Bounds.Y), new Vector2(Bounds.Width, Bounds.Height), Color);
+                        Raylib.DrawRectangleV(new Vector2(Bounds.X + 8, Bounds.Y + 8), new Vector2(6, 6), Color.Black);
+                        Raylib.DrawRectangleV(new Vector2(Bounds.X + Bounds.Width - 14, Bounds.Y + 8), new Vector2(6, 6), Color.Black);
                         break;
                 }
             }
@@ -123,11 +110,11 @@ namespace SpaceInvaders
             int cols = sprite[0].Length;
 
             // Tamaño de píxel uniforme para no deformar el dibujo
-            float pixel = MathF.Min(Width / cols, Height / rows);
+            float pixel = MathF.Min(Bounds.Width / cols, Bounds.Height / rows);
 
             // Centrar dentro del rectángulo base
-            float offsetX = Position.X + (Width - pixel * cols) / 2f;
-            float offsetY = Position.Y + (Height - pixel * rows) / 2f;
+            float offsetX = Bounds.X + (Bounds.Width - pixel * cols) / 2f;
+            float offsetY = Bounds.Y + (Bounds.Height - pixel * rows) / 2f;
 
             for (int r = 0; r < rows; r++)
             {

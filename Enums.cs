@@ -15,6 +15,12 @@
         Impact,
     }
 
+    public enum ShotType
+    {
+        Player,
+        Enemy,
+    }
+
     public enum EnemyStatus
     {
         Active,

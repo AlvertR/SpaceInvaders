@@ -16,22 +16,22 @@
   2. Jugabilidad que falta
 
   - Player.Lifes existe pero no se usa: los enemigos no disparan, así que nunca pierdes vidas.
-  - Se puede disparar sin límite manteniendo Espacio. Conviene poner un tiempo de espera entre disparos o permitir una
+  - ?? Se puede disparar sin límite manteniendo Espacio. Conviene poner un tiempo de espera entre disparos o permitir una
     sola bala a la vez, como en el original.
-  - Los enemigos bajan solo 2 px por rebote, así que casi nunca llegan a ti. Además no aceleran cuando quedan pocos.
-  - Todos los enemigos valen 1 punto, sin importar su tipo.
+  - ok Los enemigos bajan solo 2 px por rebote, así que casi nunca llegan a ti. Además no aceleran cuando quedan pocos.
+  - ok Todos los enemigos valen 1 punto, sin importar su tipo.
   - Falta guardar un récord de puntuación y pasar a un siguiente nivel en vez de terminar en "Nivel completado".
 
   3. Calidad de código
 
-  - Código duplicado: Width, Height, Position, SetPositionX y SetPositionY se repiten en Player, Shot y Enemy. Una clase
+  - ok Código duplicado: Width, Height, Position, SetPositionX y SetPositionY se repiten en Player, Shot y Enemy. Una clase
     base Entity con una propiedad Rectangle Bounds quitaría esa repetición y simplificaría las colisiones.
   - ok Números fijos en el código: 100 (velocidad de los enemigos), 226, 300, 50, -120 y otros. Mejor pasarlos a constantes
     con nombre.
   - ok Textos centrados a mano (WidthWindow/2 - 80). Raylib.MeasureText los centraría correctamente.
-  - Listas nuevas en cada frame: .Where(...).ToList() en MoveEnemys y en la limpieza de balas crea listas nuevas 60
+  - ok Listas nuevas en cada frame: .Where(...).ToList() en MoveEnemys y en la limpieza de balas crea listas nuevas 60
     veces por segundo. ShotList.RemoveAll(...) evita esas asignaciones.
-  - Setters públicos en todo, por ejemplo Score o GameStatus. Conviene private set donde nadie de fuera deba cambiarlos.
+  - ok Setters públicos en todo, por ejemplo Score o GameStatus. Conviene private set donde nadie de fuera deba cambiarlos.
   - ok Nombres: MoveEnemys, SetEnemiList, UpdateShotsOutScreanOrImpact, enemyWith, fulPathIcon, Lifes e isEnemyRight (en
     minúscula). LoadGame() en realidad corre todo el juego, así que Run() describiría mejor lo que hace.
   - ok Advertencia de nulos: Player no se inicializa en el constructor y tienes Nullable activado.

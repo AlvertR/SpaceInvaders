@@ -10,25 +10,27 @@ namespace SpaceInvaders
             NameWindow = name;
             FPS = fps;
         }
-        public int HeightWindow { get; set; }
-        public int WidthWindow { get; set; }
-        public string NameWindow { get; set; } = string.Empty;
+        public int HeightWindow { get; private set; }
+        public int WidthWindow { get; private set; }
+        public string NameWindow { get; private set; } = string.Empty;
         public int FPS { get; set; }
         public float DeltaTime { get; set; } = 0;
-        public GameStatus GameStatus { get; set; } = GameStatus.Start;
-        public int Score { get; set; } = 0;
-        public Player Player { get; set; } = new Player();
-        public List<Shot> ShotList { get; set; } = new List<Shot>();
+        public GameStatus GameStatus { get; private set; } = GameStatus.Start;
+        public int Score { get; private set; } = 0;
+        public Player Player { get; private set; } = new Player();
+        public List<Shot> ShotList { get; private set; } = new List<Shot>();
+        public List<Shot> EnemyShotList { get; private set; } = new List<Shot>();
         public Sound LaserShot { get; set; }
         public Sound CrashEnemy { get; set; }
-        public List<Enemy> EnemyList { get; set; } = new List<Enemy>();
-        public bool isEnemyRight { get; set; } = false;
-        public float TimerEnd { get; set; } = 0.8f;
-        public float EnemySpeed { get; set; } = 100;
-        public float EnemyDown { get; set; } = 2;
-        public float ScreenEnemyLimit { get; set; }
-        public float PlayerX { get; set; }
-        public float ShotSpeed { get; set; } = 226;
+        public List<Enemy> EnemyList { get; private set; } = new List<Enemy>();
+        public bool isEnemyRight { get; private set; } = false;
+        public float TimerEnd { get; private set; } = 0.8f;
+        public float EnemySpeed { get; private set; } = 100;
+        public float EnemyDown { get; private set; } = 10;
+        public float ScreenEnemyLimit { get; private set; }
+        public float PlayerX { get; private set; }
+        public float ShotSpeed { get; private set; } = 226;
+        public float TimerEnemyShot { get; private set; } = 0.8f;
 
         public void Run()
         {
@@ -81,15 +83,23 @@ namespace SpaceInvaders
                 case GameStatus.Playing:
                     foreach(var shot in ShotList)
                     {
-                        shot.SetPositionY(shot.Position.Y - (shot.Speed * DeltaTime));
+                        shot.SetPositionY(shot.Bounds.Y - (shot.Speed * DeltaTime));
+                    }
+                    foreach (var shotE in EnemyShotList)
+                    {
+                        shotE.SetPositionY(shotE.Bounds.Y + (shotE.Speed * DeltaTime));
                     }
                     this.CheckEnemyCollision();
+                    this.CheckPLayerCollision();
                     this.MoveEnemys();
+                    this.AddEnemyShot();
                     this.UpdateShotsOutScreenOrImpact();
                     this.CheckEndGame();
                     this.CheckGameOver();
                     EnemyList.Where(e => e.Status == EnemyStatus.Dead && e.ShowCollision==true).ToList()
                         .ForEach(e => e.UpdateTimer());
+                    if(Player.ShowCollision)
+                        Player.UpdateTimer();
                     break;
                 case GameStatus.Paused:
                     break;
@@ -152,10 +162,16 @@ namespace SpaceInvaders
                         if(shot.Status == ShotStatus.Active)
                             shot.Draw();
                     }
-                    foreach(var enemy in EnemyList)
+                    foreach (var shotE in EnemyShotList)
+                    {
+                        if (shotE.Status == ShotStatus.Active)
+                            shotE.Draw();
+                    }
+                    foreach (var enemy in EnemyList)
                     {
                         enemy.Draw();
                     }
+                    Player.DrawLifes(HeightWindow);
                     if(GameStatus == GameStatus.Paused)
                         Raylib.DrawText(Texts.PauseInstruction, GetMidelWidthScreanText(Texts.PauseInstruction, 24), HeightWindow/2, 24, Color.White);
                     break;
@@ -183,15 +199,31 @@ namespace SpaceInvaders
 
         public void AddShot()
         {
-            float PosX = Player.Position.X + (Player.Width / 2) - 4;
-            float PosY = Player.Position.Y - 8;
-            Shot NewShot = new Shot(6,10,PosX, PosY, Color.Lime, ShotSpeed);
+            float PosX = Player.Bounds.X + (Player.Bounds.Width / 2) - 4;
+            float PosY = Player.Bounds.Y - 8;
+            Shot NewShot = new Shot(6,10,PosX, PosY, Color.Lime, ShotSpeed, ShotType.Player);
             ShotList.Add(NewShot);
+        }
+
+        public void AddEnemyShot()
+        {
+            TimerEnemyShot -= DeltaTime;
+            if (TimerEnemyShot <= 0)
+            {
+                int index = Random.Shared.Next(EnemyList.Count);
+                var enemyRandom = EnemyList[index];
+                float PosX = enemyRandom.Bounds.X + (enemyRandom.Bounds.Width / 2) - 4;
+                float PosY = enemyRandom.Bounds.Y - 8;
+                Shot NewShot = new Shot(6, 10, PosX, PosY, enemyRandom.Color, ShotSpeed, ShotType.Enemy);
+                EnemyShotList.Add(NewShot);
+                TimerEnemyShot = 0.8f;
+            }
         }
 
         public void UpdateShotsOutScreenOrImpact()
         {
-            ShotList = ShotList.Where(s => s.Status != ShotStatus.Impact && s.Position.Y > 0).ToList();
+            ShotList.RemoveAll(s => s.Status == ShotStatus.Impact && s.Bounds.Y > 0);
+            EnemyShotList.RemoveAll(s => s.Status == ShotStatus.Impact && s.Bounds.Y >= HeightWindow);
         }
     
         public void SetEnemyList()
@@ -220,25 +252,34 @@ namespace SpaceInvaders
 
         public void MoveEnemys()
         {
-            var AliveEnemies = EnemyList.Where(e => e.Status != EnemyStatus.Dead).ToList();
-            if (AliveEnemies.Count == 0)
+            if (EnemyList.Where(e => e.Status != EnemyStatus.Dead).ToList().Count == 0)
                 return;
+            int enemys = EnemyList.Count(e => e.Status == EnemyStatus.Active);
+            float updateSpeed = enemys >= 10 ? EnemySpeed
+                : (enemys < 10 && enemys >= 5) ? EnemySpeed * 1.5f
+                : EnemySpeed * 2f;
 
-            float Move = (isEnemyRight ? EnemySpeed : -EnemySpeed) * DeltaTime;
+            float Move = (isEnemyRight ? updateSpeed : -updateSpeed) * DeltaTime;
 
             // Limites de la formacion completa, no de cada enemigo
-            float MinX = AliveEnemies.Min(e => e.Position.X);
-            float MaxX = AliveEnemies.Max(e => e.Position.X + e.Width);
+            float MinX = EnemyList.Where(e => e.Status != EnemyStatus.Dead).ToList().Min(e => e.Bounds.X);
+            float MaxX = EnemyList.Where(e => e.Status != EnemyStatus.Dead).ToList().Max(e => e.Bounds.X + e.Bounds.Width);
             Move = Math.Clamp(Move, -MinX, WidthWindow - MaxX);
 
             bool HitLeft = MinX + Move <= 0;
             bool HitRight = MaxX + Move >= WidthWindow;
 
-            foreach (var e in AliveEnemies)
+            foreach (var e in EnemyList.Where(e => e.Status != EnemyStatus.Dead).ToList())
             {
-                e.SetPositionX(e.Position.X + Move);
+                e.SetPositionX(e.Bounds.X + Move);
                 if (HitLeft || HitRight)
-                    e.SetPositionY(e.Position.Y + EnemyDown);
+                {
+                    float dawnSpeed = enemys >= 10 ? EnemyDown
+                        : (enemys < 10 && enemys >= 5) ? EnemyDown * 1.5f
+                        : EnemyDown * 2f;
+                    
+                    e.SetPositionY(e.Bounds.Y + dawnSpeed);
+                }
             }
 
             if (HitLeft)
@@ -254,22 +295,42 @@ namespace SpaceInvaders
                 if (enemy.Status != EnemyStatus.Active)
                     continue;
 
-                Rectangle enemyRec = new Rectangle(enemy.Position.X, enemy.Position.Y, enemy.Width, enemy.Height);
                 foreach (var shot in ShotList)
                 {
                     if(shot.Status != ShotStatus.Active) 
                         continue;
 
-                    Rectangle shotRec = new Rectangle(shot.Position.X, shot.Position.Y, shot.Width, shot.Height);
-                    if(Raylib.CheckCollisionRecs(enemyRec, shotRec))
+                    if(Raylib.CheckCollisionRecs(enemy.Bounds, shot.Bounds))
                     {
                         shot.SetImpactStatus();
                         enemy.SetDeadStatus();
                         Raylib.PlaySound(CrashEnemy);
                         enemy.ShowCollision = true;
-                        Score++;
+                        if(enemy.TypeEnemy == EnemyType.Bug)
+                            Score += 30;
+                        if (enemy.TypeEnemy == EnemyType.Skull)
+                            Score += 20;
+                        if (enemy.TypeEnemy == EnemyType.Fish)
+                            Score += 10;
                         break;
                     }
+                }
+            }
+        }
+
+        public void CheckPLayerCollision()
+        {
+            foreach (var shotE in EnemyShotList)
+            {
+                if (shotE.Status != ShotStatus.Active) 
+                    continue;
+
+                if(Raylib.CheckCollisionRecs(Player.Bounds, shotE.Bounds))
+                {
+                    shotE.SetImpactStatus();
+                    Raylib.PlaySound(CrashEnemy);
+                    Player.ShowCollision = true;
+                    Player.Lifes--;
                 }
             }
         }
@@ -287,7 +348,7 @@ namespace SpaceInvaders
         public void CheckGameOver()
         {
             if(EnemyList.Any(e => e.Status == EnemyStatus.Active 
-            && (e.Position.Y + e.Height) >= ScreenEnemyLimit))
+            && (e.Bounds.Y + e.Bounds.Height) >= ScreenEnemyLimit))
                 GameStatus = GameStatus.GameOver;
         }
 

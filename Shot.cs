@@ -3,36 +3,33 @@ using System.Numerics;
 
 namespace SpaceInvaders
 {
-    public class Shot
+    public class Shot : Entity
     {
-        public Shot(float width, float height, float posX, float posY, Color color, float speed) { 
-            Width = width;
-            Height = height;
-            Position = new Vector2(posX, posY);
+        public Shot(float width, float height, float posX, float posY, Color color, float speed, ShotType type) { 
+            Bounds = new Rectangle(posX, posY, width, height);
             Color = color;
             Speed = speed;
+            Type = type;
         }
-        public float Width { get; set; }
-        public float Height { get; set; }
-        public Vector2 Position { get; set; }
+
         public Color Color { get; set; }
         public ShotStatus Status { get; set; } = ShotStatus.Active;
         public float Speed { get; set; }
-
-        public void SetPositionX(float position)
-        {
-            this.Position = new Vector2(position, this.Position.Y);
-        }
-
-        public void SetPositionY(float position)
-        {
-            this.Position = new Vector2(this.Position.X, position);
-        }
+        public ShotType Type { get; set; }
 
         public void Draw()
         {
-            if(Status == ShotStatus.Active)
-                Raylib.DrawRectangleV(Position, new Vector2(Width, Height), Color);
+            if (Status == ShotStatus.Active)
+                switch (this.Type) {
+                    case ShotType.Enemy:
+                        Raylib.DrawRectangleV(new Vector2(Bounds.X, Bounds.Y), new Vector2(Bounds.Width, Bounds.Height), Color);
+                        Raylib.DrawRectangleV(new Vector2(Bounds.X - (Bounds.Height / 6), Bounds.Y- Bounds.Width), new Vector2(Bounds.Height, Bounds.Width), Color);
+                        break;
+                    case ShotType.Player:
+                    default:
+                        Raylib.DrawRectangleV(new Vector2(Bounds.X, Bounds.Y), new Vector2(Bounds.Width, Bounds.Height), Color);
+                        break;
+                }
         }
 
         public void SetImpactStatus()
