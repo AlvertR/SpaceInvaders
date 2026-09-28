@@ -5,6 +5,7 @@ namespace SpaceInvaders
 {
     public class Player
     {
+        public Player() { }
         public Player(float width, float height, float posX, float posY, float speed)
         {
             this.Width = width;

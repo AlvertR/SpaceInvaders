@@ -17,34 +17,46 @@ namespace SpaceInvaders
         public float DeltaTime { get; set; } = 0;
         public GameStatus GameStatus { get; set; } = GameStatus.Start;
         public int Score { get; set; } = 0;
-        public Player Player { get; set; }
+        public Player Player { get; set; } = new Player();
         public List<Shot> ShotList { get; set; } = new List<Shot>();
         public Sound LaserShot { get; set; }
         public Sound CrashEnemy { get; set; }
         public List<Enemy> EnemyList { get; set; } = new List<Enemy>();
         public bool isEnemyRight { get; set; } = false;
         public float TimerEnd { get; set; } = 0.8f;
+        public float EnemySpeed { get; set; } = 100;
+        public float EnemyDown { get; set; } = 2;
+        public float ScreenEnemyLimit { get; set; }
+        public float PlayerX { get; set; }
+        public float ShotSpeed { get; set; } = 226;
 
-        public void LoadGame()
+        public void Run()
         {
+            int PlayerWidth = 50;
+            int PlayerHeight = 20;
+            PlayerX = (WidthWindow / 2) - PlayerWidth / 2;
+            int PlayerY = HeightWindow - 50;
+            float PlayerSpeed = 300;
+
             Raylib.InitWindow(this.WidthWindow, this.HeightWindow, this.NameWindow);
             Raylib.InitAudioDevice();
-            string basePath = AppDomain.CurrentDomain.BaseDirectory;
+            string BasePath = AppDomain.CurrentDomain.BaseDirectory;
 
-            string fulPathIcon = Path.Combine(basePath, "Resources", "icon.png");
-            Image icon = Raylib.LoadImage(fulPathIcon);
-            Raylib.ImageFormat(ref icon, PixelFormat.UncompressedR8G8B8A8);
-            Raylib.SetWindowIcon(icon);
-            Raylib.UnloadImage(icon);
+            string FulPathIcon = Path.Combine(BasePath, "Resources", "icon.png");
+            Image Icon = Raylib.LoadImage(FulPathIcon);
+            Raylib.ImageFormat(ref Icon, PixelFormat.UncompressedR8G8B8A8);
+            Raylib.SetWindowIcon(Icon);
+            Raylib.UnloadImage(Icon);
 
-            string laserShotSoundPath = Path.Combine(basePath, "Resources", "laser-gun-shot.mp3");
-            string crashSoundPath = Path.Combine(basePath, "Resources", "crash.mp3");
-            LaserShot = Raylib.LoadSound(laserShotSoundPath);
-            CrashEnemy = Raylib.LoadSound(crashSoundPath);
+            string LaserShotSoundPath = Path.Combine(BasePath, "Resources", "laser-gun-shot.mp3");
+            string CrashSoundPath = Path.Combine(BasePath, "Resources", "crash.mp3");
+            LaserShot = Raylib.LoadSound(LaserShotSoundPath);
+            CrashEnemy = Raylib.LoadSound(CrashSoundPath);
             Raylib.SetTargetFPS(this.FPS);
 
-            Player = new Player(50,20,(WidthWindow/2) - 25, HeightWindow - 50, 300);
-            this.SetEnemiList();
+            Player = new Player(PlayerWidth, PlayerHeight, PlayerX, PlayerY, PlayerSpeed);
+            ScreenEnemyLimit = PlayerY - 50;
+            this.SetEnemyList();
 
             while (!Raylib.WindowShouldClose())
             {
@@ -73,7 +85,7 @@ namespace SpaceInvaders
                     }
                     this.CheckEnemyCollision();
                     this.MoveEnemys();
-                    this.UpdateShotsOutScreanOrImpact();
+                    this.UpdateShotsOutScreenOrImpact();
                     this.CheckEndGame();
                     this.CheckGameOver();
                     EnemyList.Where(e => e.Status == EnemyStatus.Dead && e.ShowCollision==true).ToList()
@@ -128,8 +140,8 @@ namespace SpaceInvaders
             switch (GameStatus)
             {
                 case GameStatus.Start:
-                    Raylib.DrawText(Texts.Title, GetMidelScreanText(Texts.Title, 24), 5, 24, Color.White);
-                    Raylib.DrawText(Texts.StartInstruction, GetMidelScreanText(Texts.StartInstruction, 20), 30, 20, Color.White);
+                    Raylib.DrawText(Texts.Title, GetMidelWidthScreanText(Texts.Title, 24), 5, 24, Color.White);
+                    Raylib.DrawText(Texts.StartInstruction, GetMidelWidthScreanText(Texts.StartInstruction, 20), 30, 20, Color.White);
                     break;
                 case GameStatus.Paused:
                 case GameStatus.Playing:
@@ -145,15 +157,15 @@ namespace SpaceInvaders
                         enemy.Draw();
                     }
                     if(GameStatus == GameStatus.Paused)
-                        Raylib.DrawText(Texts.PauseInstruction, GetMidelScreanText(Texts.PauseInstruction, 24), HeightWindow/2, 24, Color.White);
+                        Raylib.DrawText(Texts.PauseInstruction, GetMidelWidthScreanText(Texts.PauseInstruction, 24), HeightWindow/2, 24, Color.White);
                     break;
                 case GameStatus.GameOver:
-                    Raylib.DrawText(Texts.GameOverTitle, GetMidelScreanText(Texts.GameOverTitle, 34), HeightWindow / 2, 34, Color.White);
-                    Raylib.DrawText(Texts.ResetInstruction, GetMidelScreanText(Texts.ResetInstruction, 30), (HeightWindow / 2) + 30, 30, Color.White);
+                    Raylib.DrawText(Texts.GameOverTitle, GetMidelWidthScreanText(Texts.GameOverTitle, 34), HeightWindow / 2, 34, Color.White);
+                    Raylib.DrawText(Texts.ResetInstruction, GetMidelWidthScreanText(Texts.ResetInstruction, 30), (HeightWindow / 2) + 30, 30, Color.White);
                     break;
                 case GameStatus.End:
-                    Raylib.DrawText(Texts.EndTitle, GetMidelScreanText(Texts.EndTitle, 34), HeightWindow / 2, 34, Color.White);
-                    Raylib.DrawText(Texts.ResetInstruction, GetMidelScreanText(Texts.ResetInstruction, 30), (HeightWindow / 2) + 30, 30, Color.White);
+                    Raylib.DrawText(Texts.EndTitle, GetMidelWidthScreanText(Texts.EndTitle, 34), HeightWindow / 2, 34, Color.White);
+                    Raylib.DrawText(Texts.ResetInstruction, GetMidelWidthScreanText(Texts.ResetInstruction, 30), (HeightWindow / 2) + 30, 30, Color.White);
                     break;
                 default:
                     break;
@@ -161,44 +173,46 @@ namespace SpaceInvaders
             Raylib.EndDrawing();
         }
 
-        public int GetMidelScreanText(string text, int fontSize)
+        public int GetMidelWidthScreanText(string text, int fontSize)
         {
-            int position = 0;
-            int textWidth = Raylib.MeasureText(text, fontSize);
-            position = (WidthWindow / 2) - (textWidth / 2);
-            return position;
+            int Position = 0;
+            int TextWidth = Raylib.MeasureText(text, fontSize);
+            Position = (WidthWindow / 2) - (TextWidth / 2);
+            return Position;
         }
 
         public void AddShot()
         {
-            float posX = Player.Position.X + (Player.Width / 2) - 4;
-            float posY = Player.Position.Y - 8;
-            Shot newShot = new Shot(6,10,posX, posY, Color.Lime, 226);
-            ShotList.Add(newShot);
+            float PosX = Player.Position.X + (Player.Width / 2) - 4;
+            float PosY = Player.Position.Y - 8;
+            Shot NewShot = new Shot(6,10,PosX, PosY, Color.Lime, ShotSpeed);
+            ShotList.Add(NewShot);
         }
 
-        public void UpdateShotsOutScreanOrImpact()
+        public void UpdateShotsOutScreenOrImpact()
         {
             ShotList = ShotList.Where(s => s.Status != ShotStatus.Impact && s.Position.Y > 0).ToList();
         }
     
-        public void SetEnemiList()
+        public void SetEnemyList()
         {
-            int cols = 5;
-            int rows = 3;
-            float enemyWith = 40;
-            float enemyHeight = 30;
-            float baseSpaceX = ((WidthWindow / cols) / 2) - (enemyWith / 2);
-            float baseSpaceY = (((HeightWindow - (HeightWindow/2))/ rows) / 2) - (enemyHeight / 2);
-            for (int r = 0; r < rows; r++)
+            int Cols = 5;
+            int Rows = 3;
+            float EnemyWith = 40;
+            float EnemyHeight = 30;
+
+            float BaseSpaceX = ((WidthWindow / Cols) / 2) - (EnemyWith / 2);
+            float BaseSpaceY = (((HeightWindow - (HeightWindow/2))/ Rows) / 2) - (EnemyHeight / 2);
+
+            for (int r = 0; r < Rows; r++)
             {
                 Color rowColor = r == 0 ? Color.Red : r == 1 ? Color.Magenta : Color.SkyBlue;
                 EnemyType type = r == 0 ? EnemyType.Bug : r == 1 ? EnemyType.Skull : EnemyType.Fish;
-                for(int c = 0; c < cols; c++)
+                for(int c = 0; c < Cols; c++)
                 {
-                    float posX = baseSpaceX + ((WidthWindow / cols) * c);
-                    float posY = baseSpaceY + (((HeightWindow - (HeightWindow / 2)) / rows) * r);
-                    Enemy newEnemy = new Enemy(enemyWith, enemyHeight, posX, posY, rowColor, type);
+                    float posX = BaseSpaceX + ((WidthWindow / Cols) * c);
+                    float posY = BaseSpaceY + (((HeightWindow - (HeightWindow / 2)) / Rows) * r);
+                    Enemy newEnemy = new Enemy(EnemyWith, EnemyHeight, posX, posY, rowColor, type);
                     EnemyList.Add(newEnemy);
                 }
             }
@@ -206,30 +220,30 @@ namespace SpaceInvaders
 
         public void MoveEnemys()
         {
-            var aliveEnemies = EnemyList.Where(e => e.Status != EnemyStatus.Dead).ToList();
-            if (aliveEnemies.Count == 0)
+            var AliveEnemies = EnemyList.Where(e => e.Status != EnemyStatus.Dead).ToList();
+            if (AliveEnemies.Count == 0)
                 return;
 
-            float move = (isEnemyRight ? 100 : -100) * DeltaTime;
+            float Move = (isEnemyRight ? EnemySpeed : -EnemySpeed) * DeltaTime;
 
             // Limites de la formacion completa, no de cada enemigo
-            float minX = aliveEnemies.Min(e => e.Position.X);
-            float maxX = aliveEnemies.Max(e => e.Position.X + e.Width);
-            move = Math.Clamp(move, -minX, WidthWindow - maxX);
+            float MinX = AliveEnemies.Min(e => e.Position.X);
+            float MaxX = AliveEnemies.Max(e => e.Position.X + e.Width);
+            Move = Math.Clamp(Move, -MinX, WidthWindow - MaxX);
 
-            bool hitLeft = minX + move <= 0;
-            bool hitRight = maxX + move >= WidthWindow;
+            bool HitLeft = MinX + Move <= 0;
+            bool HitRight = MaxX + Move >= WidthWindow;
 
-            foreach (var e in aliveEnemies)
+            foreach (var e in AliveEnemies)
             {
-                e.SetPositionX(e.Position.X + move);
-                if (hitLeft || hitRight)
-                    e.SetPositionY(e.Position.Y + 2);
+                e.SetPositionX(e.Position.X + Move);
+                if (HitLeft || HitRight)
+                    e.SetPositionY(e.Position.Y + EnemyDown);
             }
 
-            if (hitLeft)
+            if (HitLeft)
                 isEnemyRight = true;
-            else if (hitRight)
+            else if (HitRight)
                 isEnemyRight = false;
         }
 
@@ -273,7 +287,7 @@ namespace SpaceInvaders
         public void CheckGameOver()
         {
             if(EnemyList.Any(e => e.Status == EnemyStatus.Active 
-            && (e.Position.Y + e.Height) >= Player.Position.Y - 50))
+            && (e.Position.Y + e.Height) >= ScreenEnemyLimit))
                 GameStatus = GameStatus.GameOver;
         }
 
@@ -282,11 +296,11 @@ namespace SpaceInvaders
             TimerEnd = 0.8f;
             GameStatus = GameStatus.Playing;
             Score = 0;
-            Player.SetPositionX((WidthWindow / 2) - 25);
+            Player.SetPositionX(PlayerX);
             ShotList = new List<Shot>();
             EnemyList = new List<Enemy>();
             isEnemyRight = false;
-            this.SetEnemiList();
+            this.SetEnemyList();
         }
     }
 }
