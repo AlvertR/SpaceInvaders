@@ -15,12 +15,12 @@
 
   2. Jugabilidad que falta
 
-  - Player.Lifes existe pero no se usa: los enemigos no disparan, así que nunca pierdes vidas.
+  - ok Player.Lifes existe pero no se usa: los enemigos no disparan, así que nunca pierdes vidas.
   - ?? Se puede disparar sin límite manteniendo Espacio. Conviene poner un tiempo de espera entre disparos o permitir una
     sola bala a la vez, como en el original.
   - ok Los enemigos bajan solo 2 px por rebote, así que casi nunca llegan a ti. Además no aceleran cuando quedan pocos.
   - ok Todos los enemigos valen 1 punto, sin importar su tipo.
-  - Falta guardar un récord de puntuación y pasar a un siguiente nivel en vez de terminar en "Nivel completado".
+  - 1/2  Falta guardar un récord de puntuación y pasar a un siguiente nivel en vez de terminar en "Nivel completado".
 
   3. Calidad de código
 

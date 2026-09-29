@@ -1,4 +1,5 @@
 ﻿using Raylib_cs;
+using System.Text.Json;
 
 namespace SpaceInvaders
 {
@@ -104,7 +105,13 @@ namespace SpaceInvaders
                 case GameStatus.Paused:
                     break;
                 case GameStatus.GameOver:
+                    break;
                 case GameStatus.End:
+                    {
+                        this.TimerEnd -= DeltaTime;
+                        if (TimerEnd <= 0)
+                            this.NewLevel();
+                    }
                     break;
                 default:
                     break;
@@ -134,9 +141,10 @@ namespace SpaceInvaders
                         GameStatus = GameStatus.Playing;
                     break;
                 case GameStatus.GameOver:
-                case GameStatus.End:
                     if (Raylib.IsKeyPressed(KeyboardKey.R))
                         this.ResetGame();
+                    break;
+                case GameStatus.End:
                     break;
                 default:
                     break;
@@ -181,7 +189,7 @@ namespace SpaceInvaders
                     break;
                 case GameStatus.End:
                     Raylib.DrawText(Texts.EndTitle, GetMidelWidthScreanText(Texts.EndTitle, 34), HeightWindow / 2, 34, Color.White);
-                    Raylib.DrawText(Texts.ResetInstruction, GetMidelWidthScreanText(Texts.ResetInstruction, 30), (HeightWindow / 2) + 30, 30, Color.White);
+                    //Raylib.DrawText(Texts.ResetInstruction, GetMidelWidthScreanText(Texts.ResetInstruction, 30), (HeightWindow / 2) + 30, 30, Color.White);
                     break;
                 default:
                     break;
@@ -208,9 +216,9 @@ namespace SpaceInvaders
         public void AddEnemyShot()
         {
             TimerEnemyShot -= DeltaTime;
-            if (TimerEnemyShot <= 0)
+            if (EnemyList.Where(e => e.Status != EnemyStatus.Dead).ToList().Count > 0 && TimerEnemyShot <= 0)
             {
-                int index = Random.Shared.Next(EnemyList.Count);
+                int index = Random.Shared.Next(EnemyList.Where(e => e.Status != EnemyStatus.Dead).ToList().Count);
                 var enemyRandom = EnemyList[index];
                 float PosX = enemyRandom.Bounds.X + (enemyRandom.Bounds.Width / 2) - 4;
                 float PosY = enemyRandom.Bounds.Y - 8;
@@ -224,6 +232,7 @@ namespace SpaceInvaders
         {
             ShotList.RemoveAll(s => s.Status == ShotStatus.Impact && s.Bounds.Y > 0);
             EnemyShotList.RemoveAll(s => s.Status == ShotStatus.Impact && s.Bounds.Y >= HeightWindow);
+            EnemyList.RemoveAll(e => e.Status == EnemyStatus.Dead && !e.ShowCollision);
         }
     
         public void SetEnemyList()
@@ -277,7 +286,7 @@ namespace SpaceInvaders
                     float dawnSpeed = enemys >= 10 ? EnemyDown
                         : (enemys < 10 && enemys >= 5) ? EnemyDown * 1.5f
                         : EnemyDown * 2f;
-                    
+
                     e.SetPositionY(e.Bounds.Y + dawnSpeed);
                 }
             }
@@ -341,7 +350,10 @@ namespace SpaceInvaders
             {
                 this.TimerEnd -= DeltaTime;
                 if (TimerEnd <= 0)
+                {
                     GameStatus = GameStatus.End;
+                    TimerEnd = 0.8f;
+                }
             }
         }
 
@@ -349,6 +361,9 @@ namespace SpaceInvaders
         {
             if(EnemyList.Any(e => e.Status == EnemyStatus.Active 
             && (e.Bounds.Y + e.Bounds.Height) >= ScreenEnemyLimit))
+                GameStatus = GameStatus.GameOver;
+
+            if(Player.Lifes <= 0)
                 GameStatus = GameStatus.GameOver;
         }
 
@@ -358,8 +373,21 @@ namespace SpaceInvaders
             GameStatus = GameStatus.Playing;
             Score = 0;
             Player.SetPositionX(PlayerX);
+            Player.Lifes = 3;
             ShotList = new List<Shot>();
             EnemyList = new List<Enemy>();
+            EnemyShotList = new List<Shot>();
+            isEnemyRight = false;
+            this.SetEnemyList();
+        }
+
+        public void NewLevel()
+        {
+            TimerEnd = 0.8f;
+            GameStatus = GameStatus.Playing;
+            ShotList = new List<Shot>();
+            EnemyList = new List<Enemy>();
+            EnemyShotList = new List<Shot>();
             isEnemyRight = false;
             this.SetEnemyList();
         }
