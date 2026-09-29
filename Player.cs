@@ -47,7 +47,6 @@ namespace SpaceInvaders
             {
                 float baseX = (10 + Bounds.Width * (l - 1));
                 float baseY = screenHeight - Bounds.Height;
-                //Console.WriteLine("x "+baseX.ToString() +" y "+ baseY.ToString() + "window" + screenHeight.ToString());
                 Raylib.DrawRectangleV(new Vector2(baseX, baseY), new Vector2(Bounds.Width/2, Bounds.Height/2), Color.Lime);
                 Raylib.DrawRectangleV(new Vector2(baseX + (Bounds.Width / 4) - 2, baseY - 4), new Vector2(4, 4), Color.Lime);
             }

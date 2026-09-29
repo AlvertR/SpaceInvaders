@@ -158,8 +158,8 @@ namespace SpaceInvaders
             switch (GameStatus)
             {
                 case GameStatus.Start:
-                    Raylib.DrawText(Texts.Title, GetMidelWidthScreanText(Texts.Title, 24), 5, 24, Color.White);
-                    Raylib.DrawText(Texts.StartInstruction, GetMidelWidthScreanText(Texts.StartInstruction, 20), 30, 20, Color.White);
+                    Raylib.DrawText(Texts.Title, GetMidelWidthScreanText(Texts.Title, 24), (HeightWindow / 2), 24, Color.White);
+                    Raylib.DrawText(Texts.StartInstruction, GetMidelWidthScreanText(Texts.StartInstruction, 20), (HeightWindow / 2) + 30, 20, Color.White);
                     break;
                 case GameStatus.Paused:
                 case GameStatus.Playing:
@@ -186,10 +186,10 @@ namespace SpaceInvaders
                 case GameStatus.GameOver:
                     Raylib.DrawText(Texts.GameOverTitle, GetMidelWidthScreanText(Texts.GameOverTitle, 34), HeightWindow / 2, 34, Color.White);
                     Raylib.DrawText(Texts.ResetInstruction, GetMidelWidthScreanText(Texts.ResetInstruction, 30), (HeightWindow / 2) + 30, 30, Color.White);
+                    Raylib.DrawText(Texts.PointsTitle + ": " + Score.ToString(), GetMidelWidthScreanText(Texts.PointsTitle + ": " + Score.ToString(), 24), (HeightWindow / 2) + 65, 24, Color.White);
                     break;
                 case GameStatus.End:
                     Raylib.DrawText(Texts.EndTitle, GetMidelWidthScreanText(Texts.EndTitle, 34), HeightWindow / 2, 34, Color.White);
-                    //Raylib.DrawText(Texts.ResetInstruction, GetMidelWidthScreanText(Texts.ResetInstruction, 30), (HeightWindow / 2) + 30, 30, Color.White);
                     break;
                 default:
                     break;
@@ -218,10 +218,10 @@ namespace SpaceInvaders
             TimerEnemyShot -= DeltaTime;
             if (EnemyList.Where(e => e.Status != EnemyStatus.Dead).ToList().Count > 0 && TimerEnemyShot <= 0)
             {
-                int index = Random.Shared.Next(EnemyList.Where(e => e.Status != EnemyStatus.Dead).ToList().Count);
-                var enemyRandom = EnemyList[index];
+                int index = Random.Shared.Next(EnemyList.Where(e => e.Status != EnemyStatus.Dead && !e.ShowCollision).ToList().Count);
+                var enemyRandom = EnemyList.Where(e => e.Status != EnemyStatus.Dead && !e.ShowCollision).ToList()[index];
                 float PosX = enemyRandom.Bounds.X + (enemyRandom.Bounds.Width / 2) - 4;
-                float PosY = enemyRandom.Bounds.Y - 8;
+                float PosY = enemyRandom.Bounds.Y + enemyRandom.Bounds.Height;
                 Shot NewShot = new Shot(6, 10, PosX, PosY, enemyRandom.Color, ShotSpeed, ShotType.Enemy);
                 EnemyShotList.Add(NewShot);
                 TimerEnemyShot = 0.8f;
@@ -230,8 +230,8 @@ namespace SpaceInvaders
 
         public void UpdateShotsOutScreenOrImpact()
         {
-            ShotList.RemoveAll(s => s.Status == ShotStatus.Impact && s.Bounds.Y > 0);
-            EnemyShotList.RemoveAll(s => s.Status == ShotStatus.Impact && s.Bounds.Y >= HeightWindow);
+            ShotList.RemoveAll(s => s.Status == ShotStatus.Impact || (s.Bounds.Y + s.Bounds.Height) < 0);
+            EnemyShotList.RemoveAll(s => s.Status == ShotStatus.Impact || s.Bounds.Y > HeightWindow);
             EnemyList.RemoveAll(e => e.Status == EnemyStatus.Dead && !e.ShowCollision);
         }
     
@@ -374,6 +374,9 @@ namespace SpaceInvaders
             Score = 0;
             Player.SetPositionX(PlayerX);
             Player.Lifes = 3;
+            Player.ShowCollision = false;
+            Player.Timer = 0.5f;
+            TimerEnemyShot = 0.8f;
             ShotList = new List<Shot>();
             EnemyList = new List<Enemy>();
             EnemyShotList = new List<Shot>();
@@ -388,6 +391,9 @@ namespace SpaceInvaders
             ShotList = new List<Shot>();
             EnemyList = new List<Enemy>();
             EnemyShotList = new List<Shot>();
+            Player.ShowCollision = false;
+            Player.Timer = 0.5f;
+            TimerEnemyShot = 0.8f;
             isEnemyRight = false;
             this.SetEnemyList();
         }
